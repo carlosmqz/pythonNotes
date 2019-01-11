@@ -1,0 +1,94 @@
+- Instalación de python
+pip install Django
+
+- Inicialización de proyecto por linea de comandos
+django-admin startproject mysite -> Donde mysite es cualquier nombre de proyecto, cada proyecto puede contener una o más aplicaciones.
+Una vez inicializado el proyecto, Django crea una estructura de directorios de la sig forma
+mysite/
+    manage.py
+    mysite/
+        __init__.py
+        settings.py
+        urls.py
+        wsgi.py
+
+$ python manage.py runserver -> inicializa el servidor de desarrollo.
+
+-Creación de aplicación
+Dentro de "mysite/mysite" se crearán los directorios para las diferentes aplicaciones que el sitio contendrá, para inicializar los directorios de aplicación, al nivel de "manage.py" se ejecuta
+
+$ python manage.py startapp <nombre_aplicacion>
+app/
+    __init__.py
+    admin.py
+    apps.py
+    migrations/
+        __init__.py
+    models.py
+    tests.py
+    urls.py
+    views.py
+
+Python tiene incluída como base de datos SQLite por defecto si se desea utilizar otro motor de base de datos se tiene que instalar el controlador adecuado y crear la base de datos en el mismo motor de BD seleccionado. Una vez creada la aplicación, se ejecuta el comando
+$python manage.py migrate
+
+El cual revisa las aplicaciones instaladas previamente y crea las tablas de base de datos configuradas en "mysite/settings.py"
+
+Para la aplicación que se va a construir el modelado de la base de datos (tablas) se realizan en el archivo "app/models.py", las tablas se definen por medio de clases en python, como por ejemplo
+	from django.db import models
+
+
+	class Question(models.Model): #el nombre de la clase indica el nombre de la tabla
+  	  question_text = models.CharField(max_length=200)  #campo
+   	  pub_date = models.DateTimeField('date published') #campo
+
+
+	class Choice(models.Model): #tabla "choice"
+   	 question = models.ForeignKey(Question, on_delete=models.CASCADE) 
+		# Foreign key hacia question, ya que question puede tener una o más opciones
+   	 choice_text = models.CharField(max_length=200) #campo para "Choice"
+   	 votes = models.IntegerField(default=0) #campo
+
+Para incluir una aplicación en nuestro proyecto, se tiene que agregar a la lista de aplicaciones instaladas dentro de "mysite/settings.py", se agrega a la lista llamada "Installed_apps" en donde se agrega la clase "<Appname>Config que se encuentra dentro de "<appname>/apps.py"
+
+INSTALLED_APPS = [
+    '<appname>.apps.PollsConfig',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+]
+
+Una vez escrito el código para crear los modelos y añadida la aplicación, nos cercioramos de poner en memoria los cambios en la base de datos con el comando
+$ python manage.py makemigrations <appname>
+
+Enseguida se ejecuta
+
+$ python manage.py migrate
+
+Este comando hace el commit de los cambios aplicandolos en la base de datos.
+
+-- Vistas
+En Django las vistas son representadas por funciones simples o métodos en el caso de clases, Django seleccionará la vista examinando la URL que se requirió, dichas vistas se escriben en el archivo "<appname>/views.py" y las URL's correspondientes a cada vista se añaden dentro del archivo "<appname>/urls.py" en una lista de python
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    # ex: /polls/
+    path('', views.index, name='index'),
+    # ex: /polls/5/
+    path('<int:question_id>/', views.detail, name='detail'),
+    # ex: /polls/5/results/
+    path('<int:question_id>/results/', views.results, name='results'),
+    # ex: /polls/5/vote/
+    path('<int:question_id>/vote/', views.vote, name='vote'),
+]
+
+Es importante señalar que para que nuestra aplicación sea visible a nivel proyecto y las URLs funcionen adecuadamente, hay que importar también el archivo "<appname>/urls.py" dentro de "<mysite>/urls.py" dentro de la lista urlpatterns
+urlpatterns = [
+    path('<appname>/', include('polls.urls')),
+    path('admin/', admin.site.urls)
+]
